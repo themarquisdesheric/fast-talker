@@ -5,8 +5,9 @@ type RecognitionType = {
 }
 
 export const useSpeechRecognition = () => {
-  const [diagnosticMessage, setDiagnosticMessage] = useState('')
   const [recognition, setRecognition] = useState<RecognitionType | null>(null)
+  const [diagnosticMessage, setDiagnosticMessage] = useState('')
+  const [isPlaying, setIsPlaying] = useState(false)
   const [speech, setSpeech] = useState('')
 
   useEffect(() => {
@@ -20,31 +21,37 @@ export const useSpeechRecognition = () => {
       recognition.lang = 'en-US'
       recognition.interimResults = false
       recognition.maxAlternatives = 1
-      // @ts-ignore
-      recognition.onresult = (event) => {
+
+      recognition.onstart = () => {
+        setIsPlaying(true)
+      }
+
+      recognition.onend = () => {
+        setIsPlaying(false)
+      }
+      
+      recognition.onresult = (event: { results: { transcript: any }[][] }) => {
         const word = event.results[0][0].transcript
         
         setSpeech(word)
       }
 
-      recognition.onend = () => {
-        setDiagnosticMessage('speech has ended')
-      }
-
-      recognition.onError = () => {
+      recognition.onerror = () => {
         setDiagnosticMessage('ERROR')
+        setIsPlaying(false)
       }
 
       setRecognition(recognition)
-      setDiagnosticMessage('Speech Recognition available! Press `start` and begin talking 😎')
+      setDiagnosticMessage('Press `start` and begin talking 😎')
     } else {
-      setSpeech('Speech Recognition not available on this browser')
+      setDiagnosticMessage('Speech Recognition not available on this browser')
     }
   }, [])
 
   return {
     diagnosticMessage,
     recognition,
+    isPlaying,
     speech,
   }
 }
